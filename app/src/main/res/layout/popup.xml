@@ -14,6 +14,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toTopOf="@id/SliderDots">
+
         <TextView xmlns:android="http://schemas.android.com/apk/res/android"
             android:id="@+id/adText"
             android:layout_width="match_parent"

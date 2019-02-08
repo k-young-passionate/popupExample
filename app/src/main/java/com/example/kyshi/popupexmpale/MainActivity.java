@@ -1,8 +1,11 @@
 package com.example.kyshi.popupexmpale;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
@@ -10,6 +13,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,9 +29,15 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -50,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
     PopupWindow popupWindow;
     DisplayMetrics display;
     ArrayList<JSONObject> ad_list;  // Saving advertisements as JsonObject type
+    ArrayList<Bitmap> ad_image_list;  // Saving advertisements
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
             });
 
 
-            PopupPagerAdapter popupPagerAdapter = new PopupPagerAdapter(this, ad_list);
+            PopupPagerAdapter popupPagerAdapter = new PopupPagerAdapter(this, ad_list, ad_image_list);
             viewPager.setAdapter(popupPagerAdapter);
 
 
@@ -175,14 +186,41 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
+
+        // 이 코드위에서 Filter 를 불러오시오 !!!!!!!!!!
+
+
         /* JSON Parsing */
         String adlist = mFirebaseRemoteConfig.getString("adlist");
         String adlist_list[] = adlist.split(", ");      // 광고 리스트 종류 불러와서 Parsing 하기
         ad_list = new ArrayList<>();
+        ad_image_list = new ArrayList<>();
+        int index = 0;
+
         for (String ad : adlist_list) {
             try {
-                ad_list.add(new JSONObject(mFirebaseRemoteConfig.getString(ad)));
-            } catch (Exception e) {
+                JSONObject tempJsonObject = new JSONObject(mFirebaseRemoteConfig.getString(ad));
+                /*
+                 * tempJsonObject 를 확인하고
+                 * FIlter 조건에 맞으면 if 문으로 진행
+                 * 맞지 않으면 넘어가세요.
+                 */
+
+                // if (filter 조건에 맞니?) {
+                ad_list.add(tempJsonObject);
+
+                DownloadImages downloadImages = new DownloadImages();
+                downloadImages.execute(tempJsonObject.getString("imgsrc"));
+
+                Bitmap ad_bitmap = downloadImages.get();
+
+                ad_image_list.add(index++, ad_bitmap);
+                //}
+            } catch (JSONException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
                 e.printStackTrace();
             }
         }
