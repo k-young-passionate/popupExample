@@ -1,14 +1,21 @@
 package com.example.kyshi.popupexmpale;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.support.constraint.ConstraintLayout;
 import android.support.v4.view.PagerAdapter;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.AppCompatImageView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -36,14 +43,31 @@ public class PopupPagerAdapter extends PagerAdapter {
 
     @Override
     public Object instantiateItem(ViewGroup collection, int position) {
-        JSONObject jsonObject = jsonObjectList.get(position);
+        final JSONObject jsonObject = jsonObjectList.get(position);
         LayoutInflater inflater = LayoutInflater.from(mContext);
         ViewGroup layout = (ViewGroup) inflater.inflate(R.layout.listitem, collection, false);
-        TextView adText = layout.findViewById(R.id.adText);
         ImageView adImage = layout.findViewById(R.id.adImage);
         Bitmap bitmap = adImageList.get(position);
+        ConstraintLayout itemLayout = layout.findViewById(R.id.itemLayout);
+
+//        itemLayout.setLayoutParams(new LinearLayout.LayoutParams(10, 10));
 
         /******** 원하는 대로 코드를 고치시면 됩니다! *********/
+
+        adImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent webIntent = null;
+                Toast.makeText(mContext, "hi", Toast.LENGTH_SHORT).show();
+                try {
+                    webIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(jsonObject.getString("imgsrc"))); //  여기 imgsrc 말고 눌렀을 때 넘어갈 url 넣어주면 됨
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                webIntent.setPackage("com.android.chrome");         // chrome 으로 지정해 놨는데 바꾸고 싶으면 바꿔도 됨
+                mContext.startActivity(webIntent);
+            }
+        });
 
         if (bitmap == null) {
 
@@ -51,11 +75,6 @@ public class PopupPagerAdapter extends PagerAdapter {
             adImage.setImageBitmap(adImageList.get(position));
             adImage.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
-        }
-        try {
-            adText.setText(jsonObject.getString("name")); // imgsrc 값 읽어오기
-        } catch (JSONException e) {
-            e.printStackTrace();
         }
         /******** 원하는 대로 코드를 고치시면 됩니다! *********/
 

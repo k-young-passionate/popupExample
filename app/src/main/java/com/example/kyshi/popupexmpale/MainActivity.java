@@ -1,11 +1,13 @@
 package com.example.kyshi.popupexmpale;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
@@ -17,10 +19,13 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
+import android.widget.QuickContactBadge;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -44,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
     FirebaseRemoteConfig mFirebaseRemoteConfig;
     FirebaseAnalytics mFirebaseAnalytics;
     Context mContext;
+    int popupWidth;
 
     // Variables for Dots on Popup Window
     LinearLayout sliderDotspanel;
@@ -51,9 +57,10 @@ public class MainActivity extends AppCompatActivity {
     private ImageView[] dots;
 
     // General Views
-    ConstraintLayout popupLayout;   // layout for popupwindow
+    LinearLayout popupLayout;   // layout for popupwindow
     Button oneWeekButton, confirmButton;    // Button on popupWindow
     ViewPager viewPager;    // viewPager on popupWindow
+    ConstraintLayout itemLayout;
 
     // For PopupWindow
     LayoutInflater layoutInflater;
@@ -68,32 +75,35 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         mContext = getApplicationContext();
+        display = mContext.getResources().getDisplayMetrics();       // 화면 size 받아오기 위한 변수
+        popupWidth = display.widthPixels * 4 / 5;
 
         firebaseInitialize();
         getNotice();
 
         if (!ad_list.isEmpty()) {       // firebase 에서 제대로 불러왔다면
-            display = getApplicationContext().getResources().getDisplayMetrics();       // 화면 size 받아오기 위한 변수
             layoutInflater = (LayoutInflater) this.getSystemService(LAYOUT_INFLATER_SERVICE);
-            popupLayout = (ConstraintLayout) layoutInflater.inflate(R.layout.popup, null);      // PopupWindow 안에 들어갈 Layout
-            popupWindow = new PopupWindow(popupLayout, display.widthPixels * 2 / 3, display.heightPixels * 2 / 3, true);    // PopupWindow
+            popupLayout = (LinearLayout) layoutInflater.inflate(R.layout.popup, null);      // PopupWindow 안에 들어갈 Layout
+            popupWindow = new PopupWindow(popupLayout, popupWidth, popupWidth * 6 / 4 + 200, true);    // PopupWindow
+
 
             /* popupWindow.getContentView() 를 쓴 이유는 setContentView 에 표시 되지 않는 친구들이기 때문 */
-            oneWeekButton = popupWindow.getContentView().findViewById(R.id.checkoneday);
-            confirmButton = popupWindow.getContentView().findViewById(R.id.confirm);
-            viewPager = popupWindow.getContentView().findViewById(R.id.viewpager);
-            sliderDotspanel = popupWindow.getContentView().findViewById(R.id.SliderDots);
+            itemLayout = (ConstraintLayout) popupWindow.getContentView().findViewById(R.id.itemLayout);
+            oneWeekButton = popupWindow.getContentView().findViewById(R.id.checkoneday);        // 다음에 보기 버튼?
+            confirmButton = popupWindow.getContentView().findViewById(R.id.confirm);            // 확인 버튼
+            viewPager = popupWindow.getContentView().findViewById(R.id.viewpager);              // 넘기는 뷰페이저, contents 표시 영역
+            sliderDotspanel = popupWindow.getContentView().findViewById(R.id.SliderDots);       // 점 생기는 linearlayout
+
 
             /* View 가 실제로 화면에 표시되는 시간보다 코드 실행이 먼저기 때문에 이러한 식으로 구현을 함 */
             findViewById(R.id.main).post(new Runnable() {
                 @Override
                 public void run() {
-                    popupWindow.setOutsideTouchable(false);
-                    popupWindow.setTouchable(true);
-                    popupWindow.setFocusable(false);
-                    popupWindow.setBackgroundDrawable(new ColorDrawable(Color.BLACK));
-                    popupWindow.showAtLocation(findViewById(R.id.main), Gravity.CENTER, 1, 1);
-                    popupWindow.update();
+                    popupWindow.setOutsideTouchable(false);     // 외부 터치 금지
+                    popupWindow.setTouchable(true);             // 내부 터치 가능
+                    popupWindow.setFocusable(false);            // 외부 눌렀을 때 dismiss 방지
+                    popupWindow.showAtLocation(findViewById(R.id.main), Gravity.CENTER, 0, 0);  // 화면 정 중앙에 위치
+                    popupWindow.update();                       // 위의 속성으로 update
                 }
             });
 
@@ -102,12 +112,12 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     /*
-                    * 일정기간
-                    * 안 받는
-                    * 코드를
-                    * 넣어야
-                    * 해요.
-                    * */
+                     * 일정기간
+                     * 안 받는
+                     * 코드를
+                     * 넣어야
+                     * 해요.
+                     * */
                     popupWindow.dismiss();
                 }
             });
@@ -118,7 +128,6 @@ public class MainActivity extends AppCompatActivity {
                     popupWindow.dismiss();
                 }
             });
-
 
             PopupPagerAdapter popupPagerAdapter = new PopupPagerAdapter(this, ad_list, ad_image_list);
             viewPager.setAdapter(popupPagerAdapter);
